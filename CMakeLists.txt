@@ -32,5 +32,5 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(Z_DUMMY_TARGET ${SRC_LIST} include/普中Learing/LED/LedOn.c include/普中Learing/LED/LedBlink.c include/普中Learing/LED/WaterLamp.c include/普中Learing/Buzzer.c include/普中Learing/DigitalTube/StaticNixieTube.c include/普中Learing/DigitalTube/DynamicDigitalTube.c include/普中Learing/Button/IndependentButton.c)
+add_executable(Z_DUMMY_TARGET ${SRC_LIST} include/普中Learing/LED/LedOn.c include/普中Learing/LED/LedBlink.c include/普中Learing/LED/WaterLamp.c include/普中Learing/Buzzer.c include/普中Learing/DigitalTube/StaticNixieTube.c include/普中Learing/DigitalTube/DynamicDigitalTube.c include/普中Learing/Button/IndependentButton.c include/普中Learing/Button/MatrixButton.c)
 
