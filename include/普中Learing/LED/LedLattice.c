@@ -1,3 +1,7 @@
+//
+// Created by 86159 on 2023-05-24.
+// led ç‚¹é˜µå®éªŒ - ä¸å®Œå…¨æˆåŠŸ
+//
 #include "reg51.h"
 
 #define SRCLK P3_6
@@ -8,7 +12,7 @@
 int num0[] = {0x00, 0x7C, 0x82, 0x82, 0x82, 0x7C, 0x00, 0x00};
 int p[] = {0x7f, 0xbf, 0xdf, 0xef, 0xf7, 0xfb, 0xfd, 0xfe};
 
-// ÑÓÊ±£¬µ¥Î»´óÖÂÊÇ 10 Î¢Ãë£¬Ã¿´«Èë 1£¬´óÔ¼ÑÓÊ± 10us
+// å»¶æ—¶ï¼Œå•ä½å¤§è‡´æ˜¯ 10 å¾®ç§’ï¼Œæ¯ä¼ å…¥ 1ï¼Œå¤§çº¦å»¶æ—¶ 10us
 void delay(int ten_us) {
     while (ten_us--);
 }
@@ -39,11 +43,11 @@ void drawNum() {
 int main() {
 
     while (1) {
-        // ×óÉÏ½ÇµãÁÁ
+        // å·¦ä¸Šè§’ç‚¹äº®
         LEDDZ_COL_PORT = 0x7F;
         hc595Write(0x80);
         delay(50000);
-        // »­ 0
+        // ç”» 0
         drawNum();
         delay(5000000);
     }
