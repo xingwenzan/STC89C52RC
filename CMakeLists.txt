@@ -34,5 +34,6 @@ add_custom_target(
 
 add_executable(Z_DUMMY_TARGET ${SRC_LIST} include/普中Learing/LED/LedOn.c include/普中Learing/LED/LedBlink.c include/普中Learing/LED/WaterLamp.c include/普中Learing/Buzzer.c include/普中Learing/DigitalTube/StaticNixieTube.c include/普中Learing/DigitalTube/DynamicDigitalTube.c include/普中Learing/Button/IndependentButton.c include/普中Learing/Button/MatrixButton.c
         include/普中Learing/IOSerialToParallel.c
-        include/普中Learing/LED/LedLattice.c)
+        include/普中Learing/LED/LedLattice.c
+        include/普中Learing/Motor/DC.c)
 
