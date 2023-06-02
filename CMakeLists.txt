@@ -36,5 +36,6 @@ add_executable(Z_DUMMY_TARGET ${SRC_LIST} include/普中Learing/LED/LedOn.c incl
         include/普中Learing/IOSerialToParallel.c
         include/普中Learing/LED/LedLattice.c
         include/普中Learing/Motor/DC.c
-        include/普中Learing/Interruptions/ExternalInterrupt.c)
+        include/普中Learing/Interruptions/ExternalInterrupt.c
+        include/普中Learing/Interruptions/TimerInterrupt.cpp)
 
