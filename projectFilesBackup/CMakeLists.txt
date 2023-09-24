@@ -5,7 +5,7 @@
 # please create `CMakeListsUser.txt` in the root of project.
 # The `CMakeListsUser.txt` will not be overwritten by PlatformIO.
 
-include_directories("$ENV{HOME}/.platformio/packages/toolchain-sdcc/share/sdcc/include")
+include_directories("$ENV{HOME}/.platformio/packages/toolchain-sdcc/include")
 
 cmake_minimum_required(VERSION 3.13)
 set(CMAKE_SYSTEM_NAME Generic)
@@ -23,19 +23,13 @@ endif()
 add_custom_target(
     Production ALL
     COMMAND platformio -c clion run "$<$<NOT:$<CONFIG:All>>:-e${CMAKE_BUILD_TYPE}>"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        WORKING_DIRECTORY .
 )
 
 add_custom_target(
     Debug ALL
     COMMAND platformio -c clion debug "$<$<NOT:$<CONFIG:All>>:-e${CMAKE_BUILD_TYPE}>"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        WORKING_DIRECTORY .
 )
 
-add_executable(Z_DUMMY_TARGET ${SRC_LIST} include/普中Learing/LED/LedOn.c include/普中Learing/LED/LedBlink.c include/普中Learing/LED/WaterLamp.c include/普中Learing/Buzzer.c include/普中Learing/DigitalTube/StaticNixieTube.c include/普中Learing/DigitalTube/DynamicDigitalTube.c include/普中Learing/Button/IndependentButton.c include/普中Learing/Button/MatrixButton.c
-        include/普中Learing/IOSerialToParallel.c
-        include/普中Learing/LED/LedLattice.c
-        include/普中Learing/Motor/DC.c
-        include/普中Learing/Interruptions/ExternalInterrupt.c
-        include/普中Learing/Interruptions/TimerInterrupt.cpp)
-
+add_executable(Z_DUMMY_TARGET ${SRC_LIST} ../src/main.c)

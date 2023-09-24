@@ -37,3 +37,6 @@ Read more about using header files in official GCC documentation:
 * Computed Includes
 
 https://gcc.gnu.org/onlinedocs/cpp/Header-Files.html
+
+
+# 特别注意：缺文件去该路径找 C:\Users\86159\.platformio\packages\toolchain-sdcc\include
