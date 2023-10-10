@@ -1,49 +1,49 @@
 //
 // Created by 86159 on 2023-10-09.
-// �������ʾ��ĸ https://blog.csdn.net/weixin_41413511/article/details/102777228
+// 数码管显示字母 https://blog.csdn.net/weixin_41413511/article/details/102777228
 //
 #include "mcs51/reg51.h"
 
 typedef unsigned int u16;
 typedef unsigned char u8;
-// ���ֽṹ�壬�������ֵĵ����֣��磺��-zhang��ܰ-xin����-wne
+// 名字结构体，代表名字的单个字，如：张-zhang、馨-xin、文-wne
 typedef struct {
-    u8 name[5];   // ������һ����ĸ��һ������ܣ�����಻�ᳬ�� 5 ����һ�������ֻ��Ҫһ���ֽڱ�ʾ
+    u8 name[5];   // 理论上一个字母用一个晶体管，但最多不会超过 5 个，一个晶体管只需要一个字节表示
 } NAME;
 
 /*
- * SMG ��ѡ ���Ƶ����������ʾɶ
- * A_DP һ��������� 8 �� LED ��ɣ��ֱ�Ϊ A B C D E F G DP(С����)
- * PORT �˿�
- * g ȫ�ֱ���
+ * SMG 段选 控制单个数码管显示啥
+ * A_DP 一个数码管由 8 个 LED 组成，分别为 A B C D E F G DP(小数点)
+ * PORT 端口
+ * g 全局变量
  */
 #define SMG_A_DP_PORT P0
-// ���� 38 ������ -> ����λѡ��ABC �ֱ��Ӧ���и�λ
+// 控制 38 译码器 -> 控制位选，ABC 分别对应低中高位
 #define LSA P2_2
 #define LSB P2_3
 #define LSC P2_4
-// ���󰴼��˿�
+// 矩阵按键端口
 #define KEY_PORT P1
 
 /*
- * ���� 0-9��a-z���ո� �����
- * ��һ���� 0-9
- * ���һ���ǿո�
- * ������ a-z
- * �������� a-z   gsmg_code[goal-'a'+10]   gaol ��Ŀ����ĸ
+ * 共阴 0-9、a-z、空格 字码表
+ * 第一行是 0-9
+ * 最后一个是空格
+ * 其余是 a-z
+ * 调用例子 a-z   gsmg_code[goal-'a'+10]   gaol 是目标字母
  */
 const u8 gsmg_code[37] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f,   // 0-9
                           0x77, 0x7c, 0x39, 0x5e, 0x79, 0x71, 0x3d, 0x76, 0x10,   // a-i
                           0x0e, 0x7a, 0x38, 0x55, 0x54, 0x5c, 0x73, 0x67, 0x50,   // j-r
-                          0x64, 0x78, 0x3e, 0x62, 0x6a, 0x36, 0x6e, 0x49, 0x00};   // s-z �ո�
+                          0x64, 0x78, 0x3e, 0x62, 0x6a, 0x36, 0x6e, 0x49, 0x00};   // s-z 空格
 
 /*
- * �ҵĵ�Ƭ���ǹ����� DP �����λ
- * ʵ�����豸�ǹ����� DP �����λ
- * ʵ��ʵ���赥����ȡ������
+ * 我的单片机是共阴且 DP 在最高位
+ * 实验室设备是共阳且 DP 在最高位
+ * 实际实验需单进行取反处理
  */
 NAME names[4][4];
-u8 x = 3, y = 3;   // ��������
+u8 x = 3, y = 3;   // 按键坐标
 
 void name_init() {
     for (u8 i = 0; i < 4; ++i) {
@@ -108,28 +108,28 @@ void name_init() {
     names[3][2].name[1] = 'i';
 }
 
-// ��ʱ����λ������ 10 ΢�룬ÿ���� 1����Լ��ʱ 10us
+// 延时，单位大致是 10 微秒，每传入 1，大约延时 10us
 void delay(u16 ten_us) {
     while (ten_us--);
 }
 
 /*
- * ������ȡ������ֱ�Ӹ�ֵ�� x,y
- * �ĵ�Ƭ����λ����(x) ��λ����(y)   7-4 ��Ӧ 0-3 ��   4-0 ��Ӧ 0-3 ��
- * �͵�ƽ��ͨ
+ * 按键读取函数，直接赋值到 x,y
+ * 的单片机高位是行(x) 低位是列(y)   7-4 对应 0-3 行   4-0 对应 0-3 行
+ * 低电平接通
  */
 void keyScan() {
-    KEY_PORT = 0x0f;   // ��λ�����ź�
-    if (KEY_PORT != 0x0f) {   // �б仯
-        delay(1000);   // ����
+    KEY_PORT = 0x0f;   // 高位发出信号
+    if (KEY_PORT != 0x0f) {   // 有变化
+        delay(1000);   // 消抖
         for (u8 i = 0; i < 4; ++i) {
             if (!((KEY_PORT >> i) & 1)) {
                 y = 3 - i;
                 break;
             }
         }
-        KEY_PORT = 0xf0;   // ����λ
-        delay(1000);   // ����
+        KEY_PORT = 0xf0;   // 留高位
+        delay(1000);   // 消抖
         for (u8 i = 4; i < 8; ++i) {
             if (!((KEY_PORT >> i) & 1)) {
                 x = 7 - i;
@@ -145,15 +145,15 @@ void keyDisplay() {
     keyScan();
 
     for (u8 i = 0; i < 5; ++i) {
-        // λѡ���ҵ�����ܴ������� 7-0 �ţ�����ϰ�ߣ���ʹ�� 7-i��
+        // 位选（我的数码管从左到右是 7-0 号，出于习惯，故使用 7-i）
         LSA = ((7 - i) >> 0) & 1;
         LSB = ((7 - i) >> 1) & 1;
         LSC = ((7 - i) >> 2) & 1;
-        // ��ѡ
+        // 段选
         SMG_A_DP_PORT = gsmg_code[names[x][y].name[i] - 'a' + 10];
-        // ��ʱ
+        // 延时
         delay(100);
-        // ���� ��������һλӰ��
+        // 归零 消除对下一位影响
         SMG_A_DP_PORT = 0x00;
     }
 }
