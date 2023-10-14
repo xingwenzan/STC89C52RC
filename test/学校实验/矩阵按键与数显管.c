@@ -45,6 +45,7 @@ const u8 gsmg_code[37] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 
 NAME names[4][4];
 u8 x = 3, y = 3;   // 按键坐标
 
+// 名字初始化
 void name_init() {
     for (u8 i = 0; i < 4; ++i) {
         for (u8 j = 0; j < 4; ++j) {
@@ -115,7 +116,7 @@ void delay(u16 ten_us) {
 
 /*
  * 按键读取函数，直接赋值到 x,y
- * 的单片机高位是行(x) 低位是列(y)   7-4 对应 0-3 行   4-0 对应 0-3 行
+ * 我的单片机高位是行(x) 低位是列(y)   7-4 对应 0-3 行   4-0 对应 0-3 行
  * 低电平接通
  */
 void keyScan() {
@@ -141,9 +142,12 @@ void keyScan() {
 
 }
 
+// 扫描并显示
 void keyDisplay() {
+    // 扫描
     keyScan();
 
+    // 显示
     for (u8 i = 0; i < 5; ++i) {
         // 位选（我的数码管从左到右是 7-0 号，出于习惯，故使用 7-i）
         LSA = ((7 - i) >> 0) & 1;
@@ -159,7 +163,9 @@ void keyDisplay() {
 }
 
 int main() {
+    // 初始化
     name_init();
+    // 循环扫描并显示
     while (1)keyDisplay();
     return 0;
 }
