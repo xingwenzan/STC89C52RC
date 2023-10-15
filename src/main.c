@@ -25,6 +25,8 @@ typedef struct {
 // 矩阵按键端口
 #define KEY_PORT P1
 
+u8 sign = 0;   // 中断标志，有中断变 1，进行扫描
+
 /**
  * 共阴 0-9、a-z、空格 字码表
  * 第一行是 0-9
@@ -128,6 +130,8 @@ void delay(u16 ten_us) {
  * 低电平接通
  */
 void keyScan() {
+    sign = 0;
+    KEY_PORT = 0x0f;   // 高位发出信号
     delay(1000);   // 消抖
     for (u8 i = 0; i < 4; ++i) {
         if (!((KEY_PORT >> i) & 1)) {
@@ -143,7 +147,6 @@ void keyScan() {
             break;
         }
     }
-    KEY_PORT = 0x0f;   // 高位发出信号，恢复初始状态
 }
 
 // 扫描并显示
@@ -175,6 +178,8 @@ int main() {
     init_int0();
     // 循环扫描并显示
     while (1) {
+        KEY_PORT = 0x0f;   // 高位发出信号
+        if (sign)keyScan();
         keyDisplay();
     }
     return 0;
@@ -186,9 +191,7 @@ void int0_interrupt_callback()
 
 __interrupt(0) {
 // 按键按下触发的中断 对机械按键进行消抖
-delay(1000);
-if (KEY_PORT != 0x0f) {   // 有变化
-keyScan();
+//delay(1000);
+sign = 1;
 
-}
 }
