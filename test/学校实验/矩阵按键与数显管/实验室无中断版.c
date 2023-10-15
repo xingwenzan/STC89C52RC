@@ -1,10 +1,10 @@
 //
 // Created by 86159 on 2023-10-09.
+// 无中断版 - 实验室电路
 // 数码管显示字母 https://blog.csdn.net/weixin_41413511/article/details/102777228
 //
 #include "mcs51/reg51.h"
 
-// -------------------------本文勿删------------------------
 typedef unsigned int u16;
 typedef unsigned char u8;
 // 名字结构体，代表名字的单个字，如：张-zhang、馨-xin、文-wne
@@ -20,8 +20,8 @@ typedef struct {
  */
 #define SMG_A_DP_PORT P0
 // 控制锁存器
-#define LSA P2_2   // 前数显管组的锁存器开关
-#define LSB P2_3   // 后数显管组的锁存器开关
+#define LSA P2_2   // 段选开关
+#define LSB P2_3   // 位选开关
 // 矩阵按键端口
 #define KEY_PORT P1
 
@@ -125,15 +125,15 @@ void keyScan() {
         delay(1000);   // 消抖
         for (u8 i = 0; i < 4; ++i) {
             if (!((KEY_PORT >> i) & 1)) {
-                y = 3 - i;
+                x = i;
                 break;
             }
         }
-        KEY_PORT = 0xf0;   // 留高位
+        KEY_PORT = 0xf0;   // 低位发出信号
         delay(1000);   // 消抖
         for (u8 i = 4; i < 8; ++i) {
             if (!((KEY_PORT >> i) & 1)) {
-                x = 7 - i;
+                y = 7 - i;
                 break;
             }
         }
@@ -149,20 +149,18 @@ void keyDisplay() {
 
     // 显示
     for (u8 i = 0; i < 5; ++i) {
-        // 位选（我的数码管从左到右是 7-0 号，出于习惯，故使用 7-i）
-        // 选数显管组
-        if (i >= 4) {
-            LSB = 1;
-            LSA = 0;
-        } else {
-            LSA = 1;
-            LSB = 0;
-        }
-        // 选数显管
-        SMG_A_DP_PORT = 1 << (i - LSA * 4);
-        delay(100);
+        // 位选
+        // 取位码
+        SMG_A_DP_PORT = ~(1 << i);
+        // 位锁存
+        LSB = 1;
+        LSB = 0;
         // 段选
+        // 取段码
         SMG_A_DP_PORT = gsmg_code[names[x][y].name[i] - 'a' + 10];
+        // 段锁存
+        LSA = 1;
+        LSA = 0;
         // 延时
         delay(100);
         // 归零 消除对下一位影响
