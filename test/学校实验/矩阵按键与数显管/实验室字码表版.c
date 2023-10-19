@@ -150,12 +150,19 @@ void keyDisplay() {
 
     // 显示
     for (u8 i = 0; i < 5; ++i) {
+        // 归零 消除对下一位影响
+        SMG_A_DP_PORT = 0x00;
+        // 段锁存
+        LSA = 1;
+        LSA = 0;
+
         // 位选
         // 取位码
         SMG_A_DP_PORT = ~(1 << i);
         // 位锁存
         LSB = 1;
         LSB = 0;
+
         // 段选
         // 取段码
         SMG_A_DP_PORT = gsmg_code[names[x][y].name[i] - 'a' + 10];
@@ -163,9 +170,6 @@ void keyDisplay() {
         LSA = 1;
         LSA = 0;
         // 延时
-        delay(100);
-        // 归零 消除对下一位影响
-        SMG_A_DP_PORT = 0x00;
         delay(100);
     }
 }

@@ -1,6 +1,7 @@
 //
 // Created by 86159 on 2023-10-09.
 // 无中断版 - 实验室电路
+// 未完成
 // 数码管显示字母 https://blog.csdn.net/weixin_41413511/article/details/102777228
 //
 #include "mcs51/reg51.h"
@@ -25,8 +26,6 @@ typedef struct {
 // 矩阵按键端口
 #define KEY_PORT P1
 
-bit sign = 0;   // 中断标志，有中断变 1，进行扫描
-
 /**
  * 共阴 0-9、a-z、空格 字码表
  * 第一行是 0-9
@@ -37,7 +36,7 @@ bit sign = 0;   // 中断标志，有中断变 1，进行扫描
 const u8 gsmg_code[37] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f,   // 0-9
                           0x77, 0x7c, 0x39, 0x5e, 0x79, 0x71, 0x3d, 0x76, 0x10,   // a-i
                           0x0e, 0x7a, 0x38, 0x55, 0x54, 0x5c, 0x73, 0x67, 0x50,   // j-r
-                          0x64, 0x78, 0x3e, 0x62, 0x6a, 0x36, 0x6e, 0x49, 0x00};   // s-z 空格
+                          0x6d, 0x78, 0x3e, 0x62, 0x6a, 0x36, 0x6e, 0x5b, 0x00};   // s-z 空格
 
 /**
  * 我的单片机是共阴且 DP 在最高位
@@ -45,7 +44,7 @@ const u8 gsmg_code[37] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 
  * 实际实验需单进行取反处理
  */
 NAME names[4][4];
-u8 x = 0, y = 0;   // 按键坐标
+u8 x = 3, y = 3;   // 按键坐标
 
 // 名字初始化
 void name_init() {
@@ -68,9 +67,10 @@ void name_init() {
     names[0][1].name[1] = 'i';
     names[0][1].name[2] = 'n';
     // wen
-    names[0][2].name[0] = 'w';
-    names[0][2].name[1] = 'e';
-    names[0][2].name[2] = 'n';
+    names[0][2].name[0] = 'u';
+    names[0][2].name[1] = 'u';
+    names[0][2].name[2] = 'e';
+    names[0][2].name[3] = 'n';
 
     // yao
     names[1][0].name[0] = 'y';
@@ -111,14 +111,6 @@ void name_init() {
     names[3][2].name[1] = 'i';
 }
 
-// 初始化外部中断0
-void init_int0() {
-    IT0 = 1; // 外部中断0的触发方式为1(电平下降沿)
-    EX0 = 1; // 允许外部中断0
-    EA = 1; // 中断总开关
-    KEY_PORT = 0x0f;   // 高位发出信号
-}
-
 // 延时，单位大致是 10 微秒，每传入 1，大约延时 10us
 void delay(u16 ten_us) {
     while (ten_us--);
@@ -130,35 +122,48 @@ void delay(u16 ten_us) {
  * 低电平接通
  */
 void keyScan() {
-    sign = 0;
-    delay(1000);   // 消抖
-    for (u8 i = 0; i < 4; ++i) {
-        if (!((KEY_PORT >> i) & 1)) {
-            x = i;
-            break;
+    KEY_PORT = 0x0f;   // 高位发出信号
+    if (KEY_PORT != 0x0f) {   // 有变化
+        delay(1000);   // 消抖
+        for (u8 i = 0; i < 4; ++i) {
+            if (!((KEY_PORT >> i) & 1)) {
+                x = i;
+                break;
+            }
+        }
+        KEY_PORT = 0xf0;   // 低位发出信号
+        delay(1000);   // 消抖
+        for (u8 i = 4; i < 8; ++i) {
+            if (!((KEY_PORT >> i) & 1)) {
+                y = 7 - i;
+                break;
+            }
         }
     }
-    KEY_PORT = 0xf0;   // 低位发出信号
-    delay(1000);   // 消抖
-    for (u8 i = 4; i < 8; ++i) {
-        if (!((KEY_PORT >> i) & 1)) {
-            y = 7 - i;
-            break;
-        }
-    }
-    KEY_PORT = 0x0f;   // 高位发出信号，恢复初始状态
+
+
 }
 
 // 扫描并显示
 void keyDisplay() {
+    // 扫描
+    keyScan();
+
     // 显示
     for (u8 i = 0; i < 5; ++i) {
+        // 归零 消除对下一位影响
+        SMG_A_DP_PORT = 0x00;
+        // 段锁存
+        LSA = 1;
+        LSA = 0;
+
         // 位选
         // 取位码
         SMG_A_DP_PORT = ~(1 << i);
         // 位锁存
         LSB = 1;
         LSB = 0;
+
         // 段选
         // 取段码
         SMG_A_DP_PORT = gsmg_code[names[x][y].name[i] - 'a' + 10];
@@ -166,33 +171,15 @@ void keyDisplay() {
         LSA = 1;
         LSA = 0;
         // 延时
-        delay(100);
-        // 归零 消除对下一位影响
-        SMG_A_DP_PORT = 0x00;
+        delay(80);
     }
+
 }
 
 int main() {
     // 初始化
     name_init();
-    init_int0();
     // 循环扫描并显示
-    while (1) {
-        if (sign)keyScan();
-        keyDisplay();
-    }
+    while (1)keyDisplay();
     return 0;
-}
-
-
-// 外部中断0服务函数
-void int0_interrupt_callback()
-
-__interrupt(0) {
-// 按键按下触发的中断 对机械按键进行消抖
-delay(1000);
-if (KEY_PORT != 0x0f) {   // 有变化
-sign = 1;
-
-}
 }
