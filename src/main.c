@@ -1,119 +1,68 @@
-//
-// Created by 86159 on 2023-10-09.
-// 无中断版 - 实验室电路
-// 未完成
-// 数码管显示字母 https://blog.csdn.net/weixin_41413511/article/details/102777228
-//
-#include "mcs51/reg51.h"
+#include"mcs51/reg51.h"
 
 typedef unsigned int u16;
 typedef unsigned char u8;
-// 名字结构体，代表名字的单个字，如：张-zhang、馨-xin、文-wne
-typedef struct {
-    u8 name[5];   // 理论上一个字母用一个晶体管，但最多不会超过 5 个，一个晶体管只需要一个字节表示
-} NAME;
 
-/**
- * SMG 段选 控制单个数码管显示啥
- * A_DP 一个数码管由 8 个 LED 组成，分别为 A B C D E F G DP(小数点)
- * PORT 端口
- * g 全局变量
- */
-#define SMG_A_DP_PORT P0
-// 控制锁存器
-#define LSA P2_2   // 段选开关
-#define LSB P2_3   // 位选开关
 // 矩阵按键端口
 #define KEY_PORT P1
 
-/**
- * 共阴 0-9、a-z、空格 字码表
- * 第一行是 0-9
- * 最后一个是空格
- * 其余是 a-z
- * 调用例子 a-z   gsmg_code[goal-'a'+10]   gaol 是目标字母
- */
-const u8 gsmg_code[37] = {0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f,   // 0-9
-                          0x77, 0x7c, 0x39, 0x5e, 0x79, 0x71, 0x3d, 0x76, 0x10,   // a-i
-                          0x0e, 0x7a, 0x38, 0x55, 0x54, 0x5c, 0x73, 0x67, 0x50,   // j-r
-                          0x6d, 0x78, 0x3e, 0x62, 0x6a, 0x36, 0x6e, 0x5b, 0x00};   // s-z 空格
+u8 out[] = "0\n\0"
+           "1\n\0"
+           "2\n\0"
+           "3\n\0"
+           "4\n\0"
+           "5\n\0"
+           "6\n\0"
+           "7\n\0"
+           "8\n\0"
+           "9\n\0"
+           "a\n\0"
+           "b\n\0"
+           "c\n\0"
+           "d\n\0"
+           "e\n\0"
+           "f\n\0";
+u8 point = -1;   // 按键坐标
+u8 change = 0;
 
-/**
- * 我的单片机是共阴且 DP 在最高位
- * 实验室设备是共阳且 DP 在最高位
- * 实际实验需单进行取反处理
- */
-NAME names[4][4];
-u8 x = 3, y = 3;   // 按键坐标
-
-// 名字初始化
-void name_init() {
-    for (u8 i = 0; i < 4; ++i) {
-        for (u8 j = 0; j < 4; ++j) {
-            for (u8 k = 0; k < 5; ++k) {
-                names[i][j].name[k] = 'z' + 1;
-            }
-        }
-    }
-
-    // zhang
-    names[0][0].name[0] = 'z';
-    names[0][0].name[1] = 'h';
-    names[0][0].name[2] = 'a';
-    names[0][0].name[3] = 'n';
-    names[0][0].name[4] = 'g';
-    // xin
-    names[0][1].name[0] = 'x';
-    names[0][1].name[1] = 'i';
-    names[0][1].name[2] = 'n';
-    // wen
-    names[0][2].name[0] = 'u';
-    names[0][2].name[1] = 'u';
-    names[0][2].name[2] = 'e';
-    names[0][2].name[3] = 'n';
-
-    // yao
-    names[1][0].name[0] = 'y';
-    names[1][0].name[1] = 'a';
-    names[1][0].name[2] = 'o';
-    // shun
-    names[1][1].name[0] = 's';
-    names[1][1].name[1] = 'h';
-    names[1][1].name[2] = 'u';
-    names[1][1].name[3] = 'n';
-    // yu
-    names[1][2].name[0] = 'y';
-    names[1][2].name[1] = 'u';
-
-    // han
-    names[2][0].name[0] = 'h';
-    names[2][0].name[1] = 'a';
-    names[2][0].name[2] = 'n';
-    // he
-    names[2][1].name[0] = 'h';
-    names[2][1].name[1] = 'e';
-    // zhi
-    names[2][2].name[0] = 'z';
-    names[2][2].name[1] = 'h';
-    names[2][2].name[2] = 'i';
-
-    // chen
-    names[3][0].name[0] = 'c';
-    names[3][0].name[1] = 'h';
-    names[3][0].name[2] = 'e';
-    names[3][0].name[3] = 'n';
-    // jia
-    names[3][1].name[0] = 'j';
-    names[3][1].name[1] = 'i';
-    names[3][1].name[2] = 'a';
-    // qi
-    names[3][2].name[0] = 'q';
-    names[3][2].name[1] = 'i';
+// 串口初始化
+void InitUART() {
+//    PCON = 1<<7;   // SMOD 为 1，当波特率 > 14400 时开启
+    SCON = 0x40;   // SCON: 模式 1, 8-bit UART, 使能接收禁止
+    TMOD |= 0x20;   // TMOD: timer 1, mode 2, 8-bit 重装
+    TH1 = 0xFD;   // TH1:  重装值 9600 波特率 晶振 11.0592MHz
+    TL1 = 0xFD;
+    TR1 = 1;   // TR1:  timer 1 打开
+    EA = 1;   //打开总中断
+    //ES = 1;   //打开串口中断
 }
 
 // 延时，单位大致是 10 微秒，每传入 1，大约延时 10us
 void delay(u16 ten_us) {
     while (ten_us--);
+}
+
+// 延时函数 单位约为毫秒
+void DelayMs(u8 t) {
+    for (int i = 0; i < t; ++i)
+        for (int j = 0; j < 110; ++j);
+}
+
+// 发送一个字节
+void SendByte(u8 dat) {
+    SBUF = dat;
+    while (!TI);
+    TI = 0;
+}
+
+// 发送一个字符串
+void SendStr(u8 *s) {
+    while (*s != '\0')// \0 表示字符串结束标志，
+        //通过检测是否字符串末尾
+    {
+        SendByte(*s);
+        s++;
+    }
 }
 
 /**
@@ -124,10 +73,11 @@ void delay(u16 ten_us) {
 void keyScan() {
     KEY_PORT = 0x0f;   // 高位发出信号
     if (KEY_PORT != 0x0f) {   // 有变化
+        change = 1;
         delay(1000);   // 消抖
         for (u8 i = 0; i < 4; ++i) {
             if (!((KEY_PORT >> i) & 1)) {
-                x = i;
+                point = i * 4;
                 break;
             }
         }
@@ -135,7 +85,7 @@ void keyScan() {
         delay(1000);   // 消抖
         for (u8 i = 4; i < 8; ++i) {
             if (!((KEY_PORT >> i) & 1)) {
-                y = 7 - i;
+                point += (7 - i);
                 break;
             }
         }
@@ -144,42 +94,20 @@ void keyScan() {
 
 }
 
-// 扫描并显示
-void keyDisplay() {
-    // 扫描
-    keyScan();
-
-    // 显示
-    for (u8 i = 0; i < 5; ++i) {
-        SMG_A_DP_PORT = 0x00;
-        // 段锁存
-        LSA = 1;
-        LSA = 0;
-        // 位选
-        // 取位码
-        SMG_A_DP_PORT = ~(1 << i);
-        // 位锁存
-        LSB = 1;
-        LSB = 0;
-        // 段选
-        // 取段码
-        SMG_A_DP_PORT = gsmg_code[names[x][y].name[i] - 'a' + 10];
-        // 段锁存
-        LSA = 1;
-        LSA = 0;
-        // 延时
-        delay(80);
-        // 归零 消除对下一位影响
-        SMG_A_DP_PORT = 0x00;
-//        delay(250);
-    }
-
-}
-
 int main() {
-    // 初始化
-    name_init();
-    // 循环扫描并显示
-    while (1)keyDisplay();
-    return 0;
+
+    InitUART();
+
+    while (1) {
+        keyScan();
+//        SendStr("11");
+        if (change) {
+//            SendStr("1212121");
+            change = 0;
+            SendStr(out + point * 3);
+        }
+
+        DelayMs(240);//延时循环发送
+        DelayMs(240);
+    }
 }
