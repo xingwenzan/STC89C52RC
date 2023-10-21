@@ -48,8 +48,8 @@ void delay(u16 ten_us) {
 
 // 延时函数 单位约为毫秒
 void DelayMs(u8 t) {
-    for (int i = 0; i < t; ++i)
-        for (int j = 0; j < 110; ++j);
+    for (u8 i = 0; i < t; ++i)
+        for (u8 j = 0; j < 110; ++j);
 }
 
 // 发送一个字节
