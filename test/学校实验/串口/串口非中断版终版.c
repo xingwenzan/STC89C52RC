@@ -32,8 +32,8 @@ u8 change = 0;
 
 
 // 串口初始化
-void InitUART(u8 st) {
-//    PCON = 1<<7;   // SMOD 为 1，当波特率 > 14400 时开启
+void InitUART(u8 p, u8 st) {
+    PCON = p << 7;   // SMOD 为 p，当波特率 > 14400 时开启
     SCON = 0x40;   // SCON: 模式 1, 8-bit UART, 使能接收禁止
     TMOD |= 0x20;   // TMOD: timer 1, mode 2, 8-bit 重装
     TH1 = st;   // TH1:  重装值 9600 波特率 晶振 11.0592MHz
@@ -102,7 +102,7 @@ void keyScan() {
 
 int main() {
 
-    InitUART(0xFD);
+    InitUART(0, 0xFD);
 
     while (1) {
         keyScan();
