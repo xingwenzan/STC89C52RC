@@ -104,7 +104,7 @@ int main() {
             SendSeg(segout[i]);
 
             Send2Byte(~tab[(j + i) % 80], 0xff);   // 红色
-//            Send2Byte(0xff, ~tab[i]);   // 绿色
+//            Send2Byte(0xff, ~tab[(j + i) % 80]);   // 绿色
 //            Send2Byte(~tab[i], ~tab[i]);   // 双色
             Out595();
             DelayMs(1);

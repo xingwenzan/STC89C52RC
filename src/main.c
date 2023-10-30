@@ -1,5 +1,6 @@
-// 课设 - 未完成
-
+//
+// Created by 86159 on 2023-10-30.
+//
 #include"mcs51/reg51.h"
 
 typedef unsigned int u16;
@@ -17,11 +18,13 @@ u8 lock = 0;   // 开关状态   0 锁未开启，即开门   1 锁开启，即锁门
 
 // 串口初始化
 void InitUART(u8 p, u8 st) {
-    PCON = p << 7;   // SMOD 为 p，当波特率 > 14400 时开启
-    SCON = 0x50;   // SCON: 模式 1, 8-bit UART, 使能接收禁止
+    PCON |= p << 7;   // SMOD 为 p，当波特率 > 14400 时开启
+    SCON = 0x50;   // SCON: 模式 1, 8-bit UART, 使能接收
+    TMOD &= 0x0F;   // 清除定时器1模式位
     TMOD |= 0x20;   // TMOD: timer 1, mode 2, 8-bit 重装
     TH1 = st;   // TH1:  重装值 9600 波特率 晶振 11.0592MHz
     TL1 = st;
+    ET1 = 0;   // 禁止定时器1中断
     TR1 = 1;   // TR1:  timer 1 打开
     EA = 1;   //打开总中断
     ES = 1;   //打开串口中断
@@ -34,7 +37,7 @@ void delay(u16 ten_us) {
 
 // 延时函数 单位约为毫秒
 void DelayMs(u16 t) {
-    for (u8 i = 0; i < t; ++i)
+    for (u16 i = 0; i < t; ++i)
         for (u8 j = 0; j < 110; ++j);
 }
 
@@ -104,30 +107,30 @@ int main() {
         // 按下按键，密码确认，正确则开门，错误/无输入则锁门
         if (!key) {
             idx = 0;
-//            SendStr(password);
             if (judge()) {
-//                SendStr("密码正确\r\n\0");
                 turn_off();
             } else {
-//                SendStr("密码错误/无输入\r\n\0");
                 turn_on();
             }
-            DelayMs(200);
+            DelayMs(250);
         }
     }
+    return 0;
 }
 
-void UART_SER(void)
+void UART_SER()
 
 __interrupt(4) //串行中断服务程序
 {
 
 if(RI)                        //判断是接收中断产生
 {
+ES = 0;
 input[idx++] =
 SBUF;                 //读入缓冲区的值
 idx%=6;
 RI = 0;
+ES = 1;
 }
-
+return;
 }
