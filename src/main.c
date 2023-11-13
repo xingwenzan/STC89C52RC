@@ -19,6 +19,8 @@ typedef unsigned char u8;
 // 控制锁存器
 #define LSA P3_0   // 段选开关
 #define LSB P3_1   // 位选开关
+// 蜂鸣器控制
+#define BUZZER P3_7
 // 矩阵按键端口
 #define KEY_PORT P1
 // 电机引脚
@@ -46,6 +48,7 @@ void init() {
         input[i] = 10;
     }
     input[7] = 0;
+    BUZZER = 0;
 }
 
 // 延时，单位大致是 10 微秒，每传入 1，大约延时 10us
@@ -59,10 +62,20 @@ void DelayMs(u16 t) {
         for (u8 j = 0; j < 110; ++j);
 }
 
+// 蜂鸣器响
+void buzzer_on() {
+    BUZZER = 1;
+}
+
+// 蜂鸣器灭
+void buzzer_off() {
+    BUZZER = 0;
+}
+
 // 开启锁，即锁门
 void turn_on() {
     if (lock) {   // 锁已经打开，即已上锁
-
+        buzzer_on();
     } else {   // 未上锁，需上锁
         lock = 1;
         for (u8 i = 0; i < 8; i++) {
@@ -117,17 +130,21 @@ void judge() {
     else turn_on();
 }
 
-// 电脑键盘 delete
+// 电脑键盘 delete 删掉当前位置及以右的所有内容，并将光标留在当前位置（相当于清空后面的内容）
 void delete() {
-    right();
-    input[input[7]] = 10;
-    left();
+    for (int i = input[7]; i < 6; ++i) {
+        input[i] = 10;
+    }
+//    input[input[7]] = 10;
 }
 
-// 电脑键盘 backspace
+// 电脑键盘 backspace 删掉当前位置的内容，并将光标留在当前位置（相当于内容整体左移一位）
 void backspace() {
-    input[input[7]] = 10;
-    left();
+    for (int i = input[7]; i < 6; ++i) {
+        input[i] = input[i + 1];
+    }
+//    input[input[7]] = 10;
+//    left();
 }
 
 // 按键读取后进行行为
@@ -169,6 +186,7 @@ void op() {
 void keyScan() {
     KEY_PORT = 0x0f;   // 高位发出信号
     if (KEY_PORT != 0x0f) {   // 有变化
+        buzzer_off();
         haveKey = 1;
         delay(1000);   // 消抖
         for (u8 i = 0; i < 4; ++i) {
@@ -185,7 +203,7 @@ void keyScan() {
                 break;
             }
         }
-        DelayMs(250);
+        DelayMs(500);
     }
 }
 
