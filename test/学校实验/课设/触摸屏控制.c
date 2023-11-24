@@ -192,14 +192,6 @@ void lcd1602_show_string(u8 x, u8 y, u8 *str) {
     }
 }
 
-void init() {
-    for (int i = 0; i < 7; ++i) {
-        input[i] = '\0';
-    }
-    lcd1602_init();
-    lcd1602_show_string(0, 1, keyValue);
-}
-
 // 蜂鸣器响
 void buzzer_on() {
     BUZZER = 1;
@@ -208,6 +200,15 @@ void buzzer_on() {
 // 蜂鸣器灭
 void buzzer_off() {
     BUZZER = 0;
+}
+
+void init() {
+    for (int i = 0; i < 7; ++i) {
+        input[i] = '\0';
+    }
+    lcd1602_init();
+    lcd1602_show_string(0, 1, keyValue);
+    buzzer_off();
 }
 
 // 开启锁，即锁门
@@ -221,6 +222,7 @@ void turn_on() {
             delay_ms(50);
         }
         motor = ~0;
+        buzzer_off();
     }
 }
 
