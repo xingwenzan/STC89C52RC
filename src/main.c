@@ -235,8 +235,9 @@ void turn_off() {
             delay_ms(50);
         }
         motor = ~0;
+        buzzer_off();
     } else {   // 未上锁，无需解锁
-
+        buzzer_off();
     }
 }
 
